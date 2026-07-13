@@ -19,6 +19,9 @@
         var parentShape = Model.Local.Get<AutoShape>("parent");
         string positioningStyle = TextHelper.GetTextPositioningStyle(textFrame, parentShape);
         string columnsParameters = TextHelper.GetTextFrameColumnsStyle(textFrame.TextFrameFormat.GetEffective());
+        string foregroundStyle = ShapeHelper.UsesAppearanceBounds(parentShape)
+            ? "position: relative; z-index: 1;"
+            : "";
         if (UseWideTextBoxLayout(textFrame, parentShape))
         {
             positioningStyle = string.Format(
@@ -26,7 +29,7 @@
                 NumberHelper.ToCssNumber(textFrame.TextFrameFormat.GetEffective().MarginTop));
         }
 
-        return string.Join(" ", new string[] {positioningStyle, columnsParameters});
+        return string.Join(" ", new string[] {positioningStyle, columnsParameters, foregroundStyle});
     }
 
     bool UseWideTextBoxLayout(TextFrame textFrame, AutoShape parentShape)

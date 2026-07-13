@@ -8,6 +8,7 @@
     var textStyle = "position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);";
 
     string imgSrc = ShapeHelper.GetShapeAsImageURL<Shape>(contextObject, Model);
+    bool useAppearanceBounds = ShapeHelper.UsesAppearanceBounds(contextObject);
 
     string id = "slide-" + contextObject.Slide.SlideId + "-shape-" + contextObject.UniqueId;
     string animationAttributes = "";
@@ -17,12 +18,21 @@
         animationAttributes = Model.Local.Get<string>("animationAttributes");
     }
 
-    var shapeStyle = positionStyle + " background-image: " + imgSrc + "; background-size: 100% 100%;";
+    var shapeStyle = positionStyle;
+    if (!useAppearanceBounds)
+        shapeStyle += " background-image: " + imgSrc + "; background-size: 100% 100%;";
     shapeStyle += String.Format(" transform: rotate({0}deg);", (int)contextObject.Rotation);
+    var imageStyle = useAppearanceBounds
+        ? ShapeHelper.GetShapeImagePositionStyle(contextObject) + " background-image: " + imgSrc + "; background-size: 100% 100%;"
+        : "";
 }
 
 @{
     <div class="shape" id="@id" style="@Raw(shapeStyle)" @Raw(animationAttributes)>
+        @if (useAppearanceBounds)
+        {
+        <div style="@Raw(imageStyle)"></div>
+        }
         @if (contextObject is AutoShape)
         {
         AutoShape shape = contextObject as AutoShape;
