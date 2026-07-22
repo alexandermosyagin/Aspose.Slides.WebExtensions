@@ -64,14 +64,8 @@ namespace Aspose.Slides.WebExtensions.Helpers
             var textFrameFormatEffective = textFrame.TextFrameFormat.GetEffective();
 
             float paraHeights = 0;
-            float maxParaWidth = float.MinValue;
             foreach (var para in textFrame.Paragraphs)
-            {
-                var paraRect = para.GetRect();
-                paraHeights += paraRect.Height;
-                if (paraRect.Width > maxParaWidth)
-                    maxParaWidth = paraRect.Width;
-            }
+                paraHeights += para.GetRect().Height;
 
             bool verticalText = textFrameFormatEffective.TextVerticalType == TextVerticalType.Vertical
                                 || textFrameFormatEffective.TextVerticalType == TextVerticalType.WordArtVertical
@@ -79,10 +73,31 @@ namespace Aspose.Slides.WebExtensions.Helpers
 
             double paddingTop = 0;
             double paddingLeft = 0;
+            string textFrameBoundsStyle = "";
+            string verticalAlignmentStyle = "";
             string writingModeStyle = "";
 
             if (!verticalText)
             {
+                if (ShapeHelper.ShouldUseAppearanceBounds(parentShape))
+                {
+                    RectangleF textBounds = ShapeHelper.GetCalloutTextBounds(parentShape);
+
+                    // Paragraph margins are emitted as CSS margins, so they must remain part of
+                    // the text frame width. Subtracting them here makes the browser apply them twice.
+                    double textWidth = textBounds.Width;
+
+                    if (textFrameFormatEffective.AnchoringType == TextAnchorType.Center)
+                    {
+                        verticalAlignmentStyle = string.Format(
+                            "height: {0}px; display: flex; flex-direction: column; justify-content: center;",
+                            (int)Math.Ceiling(parentShape.Height));
+                    }
+
+                    paddingLeft = textBounds.Left + textFrameFormatEffective.MarginLeft;
+                    textFrameBoundsStyle = string.Format("width: {0}px;", (int)Math.Ceiling(textWidth));
+                }
+
                 switch (textFrameFormatEffective.AnchoringType)
                 {
                     case TextAnchorType.Bottom:
@@ -92,6 +107,9 @@ namespace Aspose.Slides.WebExtensions.Helpers
                         paddingTop = (parentShape.Height - paraHeights - textFrameFormatEffective.MarginTop - textFrameFormatEffective.MarginBottom) / 2;
                         break;
                 }
+
+                if (!string.IsNullOrEmpty(verticalAlignmentStyle))
+                    paddingTop = 0;
             }
             else
             {
@@ -117,7 +135,7 @@ namespace Aspose.Slides.WebExtensions.Helpers
             string paddingTopStyle = string.Format("padding-top: {0}px;", (int)paddingTop);
             string paddingLeftStyle = string.Format("padding-left: {0}px;", (int)paddingLeft);
 
-            return string.Join(" ", new string[] { paddingTopStyle, paddingLeftStyle, writingModeStyle });
+            return string.Join(" ", new string[] { paddingTopStyle, paddingLeftStyle, textFrameBoundsStyle, verticalAlignmentStyle, writingModeStyle });
         }
 
         public static string GetHorizontalAlignmentStyle(TextAlignment textAlignment)

@@ -108,7 +108,9 @@ namespace Aspose.Slides.WebExtensions.Helpers
                 try
                 {
                     autoShape.TextFrame.Paragraphs.Clear();
-                    thumbnail = autoShape.GetImage();
+                    thumbnail = ShouldUseAppearanceBounds(autoShape)
+                        ? autoShape.GetImage(ShapeThumbnailBounds.Appearance, 1, 1)
+                        : autoShape.GetImage();
                 }
                 finally
                 {
@@ -149,5 +151,115 @@ namespace Aspose.Slides.WebExtensions.Helpers
             }
             return string.Format("left: {0}px; top: {1}px; width: {2}px; height: {3}px;", left, top, width, height);
         }
+
+        public static string GetShapeImagePositionStyle(Shape shape)
+        {
+            Rectangle imageBounds = GetShapeAppearanceBounds(shape);
+            if (imageBounds == Rectangle.Empty)
+                imageBounds = Rectangle.Round(new RectangleF(shape.X, shape.Y, shape.Width, shape.Height));
+
+            return string.Format(
+                "position: absolute; z-index: 0; left: {0}px; top: {1}px; width: {2}px; height: {3}px;",
+                (int)Math.Floor(imageBounds.Left - shape.X),
+                (int)Math.Floor(imageBounds.Top - shape.Y),
+                imageBounds.Width,
+                imageBounds.Height);
+        }
+
+        public static bool ShouldUseAppearanceBounds(Shape shape)
+        {
+            AutoShape autoShape = shape as AutoShape;
+            if (autoShape == null)
+                return false;
+
+            switch (autoShape.ShapeType)
+            {
+                case ShapeType.CalloutWedgeRectangle:
+                case ShapeType.CalloutWedgeRoundRectangle:
+                case ShapeType.CalloutWedgeEllipse:
+                case ShapeType.CalloutCloud:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        public static RectangleF GetCalloutTextBounds(Shape shape)
+        {
+            AutoShape autoShape = shape as AutoShape;
+            if (autoShape == null)
+                return new RectangleF(0, 0, shape.Width, shape.Height);
+
+            switch (autoShape.ShapeType)
+            {
+                case ShapeType.CalloutWedgeEllipse:
+                    const float horizontalInsetRatio = 0.146f;
+                    float horizontalInset = shape.Width * horizontalInsetRatio;
+                    return new RectangleF(horizontalInset, 0, shape.Width - 2 * horizontalInset, shape.Height);
+                default:
+                    return new RectangleF(0, 0, shape.Width, shape.Height);
+            }
+        }
+
+        private static Rectangle GetShapeAppearanceBounds(Shape shape)
+        {
+            AutoShape autoShape = shape as AutoShape;
+            if (autoShape != null && autoShape.TextFrame != null && !string.IsNullOrEmpty(autoShape.TextFrame.Text))
+            {
+                List<Paragraph> paragraphs = new List<Paragraph>();
+                foreach (Paragraph paragraph in autoShape.TextFrame.Paragraphs)
+                    paragraphs.Add(new Paragraph(paragraph));
+
+                try
+                {
+                    autoShape.TextFrame.Paragraphs.Clear();
+                    return GetShapeAppearanceBoundsWithoutText(autoShape);
+                }
+                finally
+                {
+                    foreach (Paragraph paragraph in paragraphs)
+                        autoShape.TextFrame.Paragraphs.Add(paragraph);
+                }
+            }
+
+            return GetShapeAppearanceBoundsWithoutText(shape);
+        }
+
+        private static Rectangle GetShapeAppearanceBoundsWithoutText(Shape shape)
+        {
+            using (IImage image = shape.GetImage(ShapeThumbnailBounds.Slide, 1, 1))
+            using (MemoryStream stream = new MemoryStream())
+            {
+                image.Save(stream, Aspose.Slides.ImageFormat.Png);
+                stream.Position = 0;
+
+                using (Bitmap bitmap = new Bitmap(stream))
+                {
+                    int left = bitmap.Width;
+                    int top = bitmap.Height;
+                    int right = -1;
+                    int bottom = -1;
+
+                    for (int y = 0; y < bitmap.Height; y++)
+                    {
+                        for (int x = 0; x < bitmap.Width; x++)
+                        {
+                            if (bitmap.GetPixel(x, y).A == 0)
+                                continue;
+
+                            left = Math.Min(left, x);
+                            top = Math.Min(top, y);
+                            right = Math.Max(right, x);
+                            bottom = Math.Max(bottom, y);
+                        }
+                    }
+
+                    return right < left || bottom < top
+                        ? Rectangle.Empty
+                        : Rectangle.FromLTRB(left, top, right + 1, bottom + 1);
+                }
+            }
+        }
+
     }
 }
