@@ -79,7 +79,7 @@ namespace Aspose.Slides.WebExtensions.Helpers
 
             if (!verticalText)
             {
-                if (ShapeHelper.UsesAppearanceBounds(parentShape))
+                if (ShapeHelper.ShouldUseAppearanceBounds(parentShape))
                 {
                     RectangleF textBounds = ShapeHelper.GetCalloutTextBounds(parentShape);
 

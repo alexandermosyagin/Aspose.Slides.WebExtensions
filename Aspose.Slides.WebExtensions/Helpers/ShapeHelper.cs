@@ -108,7 +108,7 @@ namespace Aspose.Slides.WebExtensions.Helpers
                 try
                 {
                     autoShape.TextFrame.Paragraphs.Clear();
-                    thumbnail = UsesAppearanceBounds(autoShape)
+                    thumbnail = ShouldUseAppearanceBounds(autoShape)
                         ? autoShape.GetImage(ShapeThumbnailBounds.Appearance, 1, 1)
                         : autoShape.GetImage();
                 }
@@ -166,7 +166,7 @@ namespace Aspose.Slides.WebExtensions.Helpers
                 imageBounds.Height);
         }
 
-        public static bool UsesAppearanceBounds(Shape shape)
+        public static bool ShouldUseAppearanceBounds(Shape shape)
         {
             AutoShape autoShape = shape as AutoShape;
             if (autoShape == null)

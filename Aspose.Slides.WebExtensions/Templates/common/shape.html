@@ -8,7 +8,7 @@
     var textStyle = "position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);";
 
     string imgSrc = ShapeHelper.GetShapeAsImageURL<Shape>(contextObject, Model);
-    bool useAppearanceBounds = ShapeHelper.UsesAppearanceBounds(contextObject);
+    bool useAppearanceBounds = ShapeHelper.ShouldUseAppearanceBounds(contextObject);
 
     string id = "slide-" + contextObject.Slide.SlideId + "-shape-" + contextObject.UniqueId;
     string animationAttributes = "";

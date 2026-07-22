@@ -19,7 +19,7 @@
         var parentShape = Model.Local.Get<AutoShape>("parent");
         string positioningStyle = TextHelper.GetTextPositioningStyle(textFrame, parentShape);
         string columnsParameters = TextHelper.GetTextFrameColumnsStyle(textFrame.TextFrameFormat.GetEffective());
-        string foregroundStyle = ShapeHelper.UsesAppearanceBounds(parentShape)
+        string foregroundStyle = ShapeHelper.ShouldUseAppearanceBounds(parentShape)
             ? "position: relative; z-index: 1;"
             : "";
         if (UseWideTextBoxLayout(textFrame, parentShape))
